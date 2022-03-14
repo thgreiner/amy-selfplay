@@ -1,0 +1,4 @@
+amy
+*.o
+*.d
+.ninja_log

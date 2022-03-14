@@ -1,0 +1,47 @@
+CC=clang
+CXX=clang++
+CFLAGS=-march=native -O3 -DNDEBUG -DUSE_MAGIC
+# CFLAGS=-g -DUSE_MAGIC
+
+rule cc
+  depfile = $out.d
+  command = $CC -MD -MF $out.d $CFLAGS -c $in -o $out
+
+rule cxx
+  depfile = $out.d
+  command = $CXX -MD -MF $out.d $CFLAGS -c $in -o $out --std=c++17 -I../edgetpu_runtime/libedgetpu/ -I../tensorflow/ -I../flatbuffers-1.12.0/include/
+
+rule link
+  command = $CXX -o $out $in -L/usr/local/lib -ledgetpu.1 -ltensorflowlite -lprometheus-cpp-pull -lprometheus-cpp-core -lz -lserved
+
+build amy: link main.o movegen.o magic.o attacks.o heap.o position.o perft.o mate.o edgetpu.o mcts.o board.o selfplay.o monitoring.o cli.o mytb.o
+
+build main.o: cxx main.cc
+
+build movegen.o: cc movegen.c
+
+build magic.o: cc magic.c
+
+build attacks.o: cc attacks.c
+
+build heap.o: cc heap.c
+
+build position.o: cc position.c
+
+build perft.o: cc perft.c
+
+build mate.o: cc mate.c
+
+build edgetpu.o: cxx edgetpu.cc
+
+build mcts.o: cxx mcts.cc
+
+build board.o: cxx board.cc
+
+build selfplay.o: cxx selfplay.cc
+
+build monitoring.o: cxx monitoring.cc
+
+build cli.o: cxx cli.cc
+
+build mytb.o: cxx mytb.cc
