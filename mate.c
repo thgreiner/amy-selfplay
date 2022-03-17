@@ -15,7 +15,7 @@ static int negascout(restrict heap_t heap, const restrict position_t pos,
     int value = -INF;
     struct position t;
 
-    if (depth <= 0) {
+    if (depth <= 0 || is_insufficient_material(pos) || is_repeated(pos, 1)) {
         return 0;
     }
 
