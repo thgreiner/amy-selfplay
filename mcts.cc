@@ -24,10 +24,29 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
 
     std::cout << std::fixed << std::setprecision(1);
     std::cout << "Eval: " << 100.0f * value << "%   "
-	      << "Win: " << 100.0f * model->get_win_probability() << "% "
-	      << "Draw: " << 100.0f * model->get_draw_probability() << "% "
-	      << "Loss: " << 100.0f * model->get_loss_probability() << "%"
-	      << std::endl;
+              << "Win: " << 100.0f * model->get_win_probability() << "% "
+              << "Draw: " << 100.0f * model->get_draw_probability() << "% "
+              << "Loss: " << 100.0f * model->get_loss_probability() << "%"
+              << std::endl;
+
+    std::vector<uint32_t> moves;
+    board.generate_legal_moves(moves);
+
+    std::sort(moves.begin(), moves.end(), [root](uint32_t a, uint32_t b) {
+        return root->children[a]->prior > root->children[b]->prior;
+    });
+
+    int cnt = 0;
+    for (auto move : moves) {
+        auto child = root->children[move];
+        if (cnt != 0) {
+            std::cout << ", ";
+        }
+        std::cout << board.san(move) << " " << 100.0 * child->prior << "%";
+        if (++cnt >= 3)
+            break;
+    }
+    std::cout << std::endl;
 
     if (exploration_noise) {
         add_exploration_noise(root);
@@ -113,26 +132,24 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
 
     monitoring::monitoring::instance()->observe_decision(decision_simulation);
 
-    /*
-    std::vector<uint32_t> moves;
-    board.generate_legal_moves(moves);
-
     std::sort(moves.begin(), moves.end(), [root](uint32_t a, uint32_t b) {
         return root->children[a]->visit_count > root->children[b]->visit_count;
     });
 
-    int cnt = 0;
+    cnt = 0;
     for (auto move : moves) {
         auto child = root->children[move];
-        if (child->visit_count > 0) {
-            std::cout << board.san(move) << ":\t" << std::setw(5)
-                      << child->visit_count << "\t" << 100.0 * child->value()
-                      << "%" << std::endl;
+        if (cnt != 0) {
+            std::cout << ", ";
         }
-        if (++cnt >= 5)
+        if (child->visit_count > 0) {
+            std::cout << board.san(move) << "(" << child->visit_count << ") "
+                      << 100.0 * child->value() << "%";
+        }
+        if (++cnt >= 3)
             break;
     }
-    */
+    std::cout << std::endl;
 
     return root;
 }
