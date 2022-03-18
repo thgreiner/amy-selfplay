@@ -262,6 +262,21 @@ float EdgeTpuModel::get_logit(uint32_t move, int eor) {
     return logits.params.scale * (data[index] - logits.params.zero_point);
 }
 
+float EdgeTpuModel::get_win_probability() {
+    auto value = Dequantize(*interpreter->output_tensor(2));
+    return value[0];
+}
+
+float EdgeTpuModel::get_draw_probability() {
+    auto value = Dequantize(*interpreter->output_tensor(2));
+    return value[1];
+}
+
+float EdgeTpuModel::get_loss_probability() {
+    auto value = Dequantize(*interpreter->output_tensor(2));
+    return value[2];
+}
+
 ChessRepr::ChessRepr() {
     int idx = 0;
 

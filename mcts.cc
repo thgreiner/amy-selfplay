@@ -22,6 +22,13 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
     float value = evaluate(root, board);
     check_winner(root, board);
 
+    std::cout << std::fixed << std::setprecision(1);
+    std::cout << "Eval: " << 100.0f * value << "%   "
+	      << "Win: " << 100.0f * model->get_win_probability() << "% "
+	      << "Draw: " << 100.0f * model->get_draw_probability() << "% "
+	      << "Loss: " << 100.0f * model->get_loss_probability() << "%"
+	      << std::endl;
+
     if (exploration_noise) {
         add_exploration_noise(root);
         std::cout << "Using exploration noise." << std::endl;
@@ -32,8 +39,6 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
 
     // search_path tracks the current expansion path of the MCTS search
     std::vector<std::shared_ptr<Node>> search_path;
-
-    std::cout << std::fixed << std::setprecision(1);
 
     int decision_simulation = 0;
     std::shared_ptr<Node> best_child;

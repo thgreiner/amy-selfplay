@@ -29,6 +29,9 @@ class EdgeTpuModel {
 
     float get_value();
     float get_logit(uint32_t move, int eor);
+    float get_win_probability();
+    float get_draw_probability();
+    float get_loss_probability();
 
   private:
     std::string model_name;
