@@ -350,13 +350,14 @@ bool is_repeated(position_t restrict p, int count) {
     int repetitions_found = 1;
     position_t q = p;
 
-    while (p->prev) {
+    while (q->prev) {
         q = q->prev;
 
         if (p->turn == q->turn && p->by_color[1] == q->by_color[1] &&
             p->by_color[0] == q->by_color[0] &&
             p->by_type[PAWN] == q->by_type[PAWN] &&
             p->by_type[KNIGHT] == q->by_type[KNIGHT] &&
+            p->by_type[BISHOP] == q->by_type[BISHOP] &&
             p->by_type[ROOK] == q->by_type[ROOK] &&
             p->by_type[QUEEN] == q->by_type[QUEEN] &&
             p->by_type[KING] == q->by_type[KING] &&
