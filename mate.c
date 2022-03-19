@@ -73,6 +73,7 @@ uint32_t mate_search(restrict heap_t heap, const restrict position_t pos,
 
     uint32_t best_move = 0;
     int value;
+    int depth;
 
     nodes = 0;
 
@@ -81,7 +82,7 @@ uint32_t mate_search(restrict heap_t heap, const restrict position_t pos,
     push_section(heap);
     generate_pseudolegal_moves(heap, pos);
 
-    for (int depth = 1; depth < max_depth; depth += 2) {
+    for (depth = 1; depth < max_depth; depth += 2) {
         value = -INF;
 
         int alpha = INF - 100;
@@ -128,7 +129,8 @@ uint32_t mate_search(restrict heap_t heap, const restrict position_t pos,
     long microseconds = end.tv_usec - begin.tv_usec;
     float elapsed = seconds + microseconds * 1e-6;
 
-    printf("Mate search visited %u nodes in %.2fs.\n", nodes, elapsed);
+    printf("Mate search visited %u nodes in %.2fs, depth=%d.\n", nodes, elapsed,
+           depth);
 
     if (value < (INF - 400)) {
         best_move = 0;
@@ -144,6 +146,7 @@ const char *MATE_POSITIONS[] = {
     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -"};
 
 void test_mate_search() {
+    static char buffer[16];
 
     heap_t heap = allocate_heap();
 
@@ -154,6 +157,10 @@ void test_mate_search() {
         bool success = parse_epd(&pos, epd);
 
         print_position(&pos);
-        mate_search(heap, &pos, 8, 50000);
+        uint32_t move = mate_search(heap, &pos, 8, 50000);
+        if (move) {
+            san(buffer, heap, &pos, move);
+            printf("==> %s\n", buffer);
+        }
     }
 }

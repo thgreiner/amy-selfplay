@@ -12,6 +12,7 @@
 #include "perft.h"
 #include "position.h"
 #include "selfplay.h"
+#include "mate.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -208,6 +209,7 @@ int main(int argc, char *argv[]) {
                       cxxopts::value<int>()->implicit_value("1000"))
         ("test_board", "Test Board")
         ("test_tb", "Test tablebases")
+        ("test_mate", "Test mate search")
         ("perft", "Run the perft test",
                   cxxopts::value<int>()->implicit_value("6"))
         ("selfplay", "Perform selfplay")
@@ -270,6 +272,10 @@ int main(int argc, char *argv[]) {
 
     if (result.count("test_tb")) {
         testEGTB();
+    }
+
+    if (result.count("test_mate")) {
+        test_mate_search();
     }
 
     try {
