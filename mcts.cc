@@ -9,6 +9,10 @@
 #include "movegen.h"
 #include "mytb.h"
 
+static const float moves_left_threshold = 0.8;
+static const float moves_left_slope = 0.015;
+static const float moves_left_max_effect = 0.15;
+
 float update_kldgain(std::shared_ptr<Node>, std::map<uint32_t, int> &);
 
 std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
@@ -26,8 +30,8 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
     std::cout << "Eval: " << 100.0f * value << "%   "
               << "Win: " << 100.0f * model->get_win_probability() << "% "
               << "Draw: " << 100.0f * model->get_draw_probability() << "% "
-              << "Loss: " << 100.0f * model->get_loss_probability() << "%"
-              << std::endl;
+              << "Loss: " << 100.0f * model->get_loss_probability() << "%  "
+              << "Moves left: " << (int)model->get_moves_left() << std::endl;
 
     std::vector<uint32_t> moves;
     board.generate_legal_moves(moves);
@@ -90,7 +94,7 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
         }
 
         float value = evaluate(node, board);
-        backpropagate(search_path, value, board.turn());
+        backpropagate(search_path, node, value, board.turn());
 
         for (auto i = 0; i < depth; i++)
             board.undo_move();
@@ -143,7 +147,8 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
             std::cout << ", ";
         }
         if (child->visit_count > 0) {
-            std::cout << board.san(move) << "(" << child->visit_count << ") "
+            std::cout << board.san(move) << " (" << child->visit_count
+                      << ",r=" << child->moves_left() << ") "
                       << 100.0 * child->value() << "%";
         }
         if (++cnt >= 3)
@@ -248,6 +253,8 @@ float MCTS::evaluate(std::shared_ptr<Node> node, Board &board) {
         //           << std::endl;
     }
 
+    node->moves_left_sum = model->get_moves_left();
+
     return model->get_value();
 }
 
@@ -264,11 +271,24 @@ float ucb_score(std::shared_ptr<Node> parent, std::shared_ptr<Node> child,
         }
     }
 
+    float m = 0.0f;
+
+    bool moves_left_adjustment = abs(parent->value()) > moves_left_threshold;
+
+    if (moves_left_adjustment) {
+        const float parent_m = parent->moves_left();
+        const float child_m = child->moves_left();
+        const float q = child->value();
+        m = std::clamp(moves_left_slope * (child_m - parent_m),
+                       -moves_left_max_effect, moves_left_max_effect);
+        m *= std::copysign(q * q, -q);
+    }
+
     float pb_c =
         logf((parent->visit_count + pb_c_base + 1) / pb_c_base) + pb_c_init;
     pb_c *= sqrtf(parent->visit_count) / (child->visit_count + 1);
 
-    return child->value() + child->prior * pb_c;
+    return child->value() + child->prior * pb_c + m;
 }
 
 std::pair<uint32_t, float> MCTS::select_child(std::shared_ptr<Node> node) {
@@ -287,9 +307,12 @@ std::pair<uint32_t, float> MCTS::select_child(std::shared_ptr<Node> node) {
 }
 
 void MCTS::backpropagate(std::vector<std::shared_ptr<Node>> search_path,
-                         float value, bool turn) {
-    for (auto node : search_path) {
+                         std::shared_ptr<Node> leaf, float value, bool turn) {
+    int d = leaf->moves_left_sum;
+    for (auto it = search_path.rbegin(); it != search_path.rend(); ++it) {
+        auto node = it->get();
         node->value_sum += (node->turn != turn) ? value : 1.0 - value;
+        node->moves_left_sum += d++;
         node->visit_count += 1;
     }
 }
@@ -379,11 +402,24 @@ uint32_t select_randomized_move(std::shared_ptr<Node> node) {
     return result->first;
 }
 
+float ucb_score_adj(std::shared_ptr<Node> parent, std::shared_ptr<Node> child,
+                    int child_visit_count) {
+    static float pb_c_init = 1.25f;
+    static float pb_c_base = 19652.0f;
+
+    float pb_c =
+        logf((parent->visit_count + pb_c_base + 1) / pb_c_base) + pb_c_init;
+    pb_c *= sqrtf(parent->visit_count) / (child_visit_count + 1);
+
+    return child->value() + child->prior * pb_c;
+}
+
 void MCTS::correct_forced_playouts(std::shared_ptr<Node> node) {
     const uint32_t best_move = select_most_visited_move(node);
     const auto best_child = node->children[best_move];
 
-    const float best_ucb_score = ucb_score(node, best_child);
+    const float best_ucb_score =
+        ucb_score_adj(node, best_child, best_child->visit_count);
 
     for (auto n : node->children) {
         if (n.first == best_move)
@@ -392,9 +428,10 @@ void MCTS::correct_forced_playouts(std::shared_ptr<Node> node) {
 
         const int playouts = child->visit_count;
         for (int i = 1; i <= child->forced_playouts; i++) {
-            child->visit_count = playouts - i;
-            if (ucb_score(node, child) > best_ucb_score) {
-                child->visit_count = playouts - i + 1;
+            int child_visit_count = playouts - i;
+            if (ucb_score_adj(node, child, child_visit_count) >
+                best_ucb_score) {
+                child->visit_count = child_visit_count;
                 break;
             }
         }

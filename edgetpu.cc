@@ -277,6 +277,11 @@ float EdgeTpuModel::get_loss_probability() {
     return value[2];
 }
 
+float EdgeTpuModel::get_moves_left() {
+    auto value = Dequantize(*interpreter->output_tensor(3));
+    return value[0];
+}
+
 ChessRepr::ChessRepr() {
     int idx = 0;
 

@@ -20,6 +20,11 @@ class Node {
         return (visit_count == 0) ? 0.0f : (value_sum / visit_count);
     }
 
+    float moves_left(float parent_moves_left = 0.0f) const {
+        return (visit_count == 0) ? parent_moves_left
+                                  : (moves_left_sum / visit_count);
+    }
+
     int visit_count = 0;
     bool turn;
     float prior;
@@ -28,6 +33,7 @@ class Node {
     bool is_expanded() const { return children.size() != 0; }
 
     float value_sum = 0.0;
+    float moves_left_sum = 0.0;
     bool is_root = false;
     int forced_playouts = 0;
 };
@@ -56,7 +62,8 @@ class MCTS {
     std::shared_ptr<EdgeTpuModel> model;
     float evaluate(std::shared_ptr<Node> node, Board &board);
     std::pair<uint32_t, float> select_child(std::shared_ptr<Node>);
-    void backpropagate(std::vector<std::shared_ptr<Node>>, float, bool);
+    void backpropagate(std::vector<std::shared_ptr<Node>>,
+                       std::shared_ptr<Node>, float, bool);
     void add_exploration_noise(std::shared_ptr<Node>);
     void print_search_status(std::shared_ptr<Node>, Board &, int);
     void print_pv(std::shared_ptr<Node>, Board &board);

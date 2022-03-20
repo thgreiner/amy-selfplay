@@ -5,6 +5,7 @@
 #include "edgetpu.h"
 #include "heap.h"
 #include "magic.h"
+#include "mate.h"
 #include "mcts.h"
 #include "monitoring.h"
 #include "movegen.h"
@@ -12,7 +13,6 @@
 #include "perft.h"
 #include "position.h"
 #include "selfplay.h"
-#include "mate.h"
 
 #include <stdio.h>
 #include <stdlib.h>
