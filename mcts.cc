@@ -258,6 +258,25 @@ float MCTS::evaluate(std::shared_ptr<Node> node, Board &board) {
     return model->get_value();
 }
 
+float moves_left_correction(std::shared_ptr<Node> parent,
+                            std::shared_ptr<Node> child) {
+    float m = 0.0f;
+
+    const auto parent_q = 2.0f * parent->value() - 1.0f;
+
+    bool moves_left_adjustment = abs(parent_q) > moves_left_threshold;
+
+    if (moves_left_adjustment) {
+        const float parent_m = parent->moves_left();
+        const float child_m = child->moves_left();
+        const float q = 2.0f * child->value() - 1.0f;
+        m = std::clamp(moves_left_slope * (child_m - parent_m),
+                       -moves_left_max_effect, moves_left_max_effect);
+        m *= std::copysign(q * q, -q);
+    }
+    return m;
+}
+
 float ucb_score(std::shared_ptr<Node> parent, std::shared_ptr<Node> child,
                 bool force_playouts = false) {
     static float pb_c_init = 1.25f;
@@ -271,18 +290,7 @@ float ucb_score(std::shared_ptr<Node> parent, std::shared_ptr<Node> child,
         }
     }
 
-    float m = 0.0f;
-
-    bool moves_left_adjustment = abs(parent->value()) > moves_left_threshold;
-
-    if (moves_left_adjustment) {
-        const float parent_m = parent->moves_left();
-        const float child_m = child->moves_left();
-        const float q = child->value();
-        m = std::clamp(moves_left_slope * (child_m - parent_m),
-                       -moves_left_max_effect, moves_left_max_effect);
-        m *= std::copysign(q * q, -q);
-    }
+    const float m = moves_left_correction(parent, child);
 
     float pb_c =
         logf((parent->visit_count + pb_c_base + 1) / pb_c_base) + pb_c_init;
