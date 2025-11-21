@@ -14,7 +14,15 @@ Board::Board() {
 
 Board::Board(std::string &epd) {
     std::shared_ptr<struct position> p = std::make_shared<struct position>();
-    parse_epd(p.get(), epd.c_str());
+
+    if (epd.length() != 0) {
+        parse_epd(p.get(), epd.c_str());
+        is_setup_flag = true;
+        starting_fen = epd.append(" 0 1");
+    } else {
+        parse_epd(p.get(), INITIAL_POSITION_EPD);
+    }
+
     positions.push_back(p);
 
     heap = allocate_heap();
@@ -122,6 +130,8 @@ std::string Board::variation_san(const std::vector<uint32_t> &variation) {
 
 int Board::move_number() const { return 1 + current_position()->ply / 2; }
 
+int Board::ply() const { return current_position()->ply; }
+
 bool Board::game_ended() const {
     if (is_insufficient_material())
         return true;
@@ -169,3 +179,7 @@ bool Board::parse_san(std::string &san, uint32_t &move) {
 uint32_t Board::search_checkmate(int depth, uint64_t budget) {
     return ::mate_search(heap, current_position(), depth, budget);
 }
+
+bool Board::is_setup() const { return is_setup_flag; }
+
+std::string Board::get_starting_fen() const { return starting_fen; }

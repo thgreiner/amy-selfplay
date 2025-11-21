@@ -13,6 +13,39 @@
 #include "mcts.h"
 #include "monitoring.h"
 
+const char *starting_positions[] = {
+    "",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN1 w Qkq -",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKB1R w KQkq -",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK1NR w KQkq -",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RN1QKBNR w KQkq -",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R1BQKBNR w KQkq -",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/1NBQKBNR w Kkq -",
+    "1nbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk -",
+    "r1bqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+    "rn1qkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+    "rnbqk1nr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+    "rnbqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+    "rnbqkbn1/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQq -",
+    "rnbnkbqr/pppppppp/8/8/8/8/PPPPPPPP/RNBNKBQR w KQkq -",
+    "rnnbkqbr/pppppppp/8/8/8/8/PPPPPPPP/RNNBKQBR w KQkq -",
+    "rnqbknbr/pppppppp/8/8/8/8/PPPPPPPP/RNQBKNBR w KQkq -",
+    "rbnqknbr/pppppppp/8/8/8/8/PPPPPPPP/RBNQKNBR w KQkq -",
+    "rbnnkqbr/pppppppp/8/8/8/8/PPPPPPPP/RBNNKQBR w KQkq -",
+    "rbqnknbr/pppppppp/8/8/8/8/PPPPPPPP/RBQNKNBR w KQkq -",
+    "rbbnkqnr/pppppppp/8/8/8/8/PPPPPPPP/RBBNKQNR w KQkq -",
+    "rqbnkbnr/pppppppp/8/8/8/8/PPPPPPPP/RQBNKBNR w KQkq -",
+    "rqbbknnr/pppppppp/8/8/8/8/PPPPPPPP/RQBBKNNR w KQkq -",
+    "rnbbknqr/pppppppp/8/8/8/8/PPPPPPPP/RNBBKNQR w KQkq -",
+    "rnbbkqnr/pppppppp/8/8/8/8/PPPPPPPP/RNBBKQNR w KQkq -",
+    "rqnnkbbr/pppppppp/8/8/8/8/PPPPPPPP/RQNNKBBR w KQkq -",
+    "rbbqknnr/pppppppp/8/8/8/8/PPPPPPPP/RBBQKNNR w KQkq -",
+    "rbbnknqr/pppppppp/8/8/8/8/PPPPPPPP/RBBNKNQR w KQkq -",
+    "rnqnkbbr/pppppppp/8/8/8/8/PPPPPPPP/RNQNKBBR w KQkq -",
+    "rqnbknbr/pppppppp/8/8/8/8/PPPPPPPP/RQNBKNBR w KQkq -",
+    "rnnqkbbr/pppppppp/8/8/8/8/PPPPPPPP/RNNQKBBR w KQkq -",
+};
+
 void setup_server(void);
 
 static char game_date_buffer[128];
@@ -68,6 +101,13 @@ void header(std::ostream &pgn_file, int round, const std::string &outcome,
     pgn_file << "[Result \"" << outcome << "\"]" << std::endl;
 }
 
+void header_if_setup(std::ostream &pgn_file, Board &b) {
+    if (b.is_setup()) {
+        pgn_file << "[SetUp \"1\"]" << std::endl;
+        pgn_file << "[FEN \"" << b.get_starting_fen() << "\"]" << std::endl;
+    }
+}
+
 bool fully_playout_game() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -82,6 +122,14 @@ bool fully_playout_move() {
     static std::uniform_int_distribution<int> d(0, 99);
 
     return d(gen) < 25;
+}
+
+int random_playout_limit() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<int> d(5, 15);
+
+    return d(gen);
 }
 
 static std::string current_epd;
@@ -108,23 +156,33 @@ std::string get_file_name() {
 }
 
 void selfplay(std::string model_name, const int sims) {
+    const int number_of_starting_positions =
+        sizeof(starting_positions) / sizeof(char *);
+
+    std::cout << "Starting selfplay with model " << model_name << "and " << sims
+              << " sims." << std::endl;
 
     std::thread server_thread(setup_server);
+    std::cout << "Started monitoring." << std::endl;
 
     std::shared_ptr<EdgeTpuModel> model =
         std::make_shared<EdgeTpuModel>(model_name);
 
     MCTS mcts(model);
-    // mcts.set_kldgain_stop(1.0e-5);
+    mcts.set_kldgain_stop(1e-5);
 
     auto file_name = get_file_name();
 
     std::cout << file_name << std::endl;
+    std::cout << number_of_starting_positions << std::endl;
     std::ofstream pgn_file;
 
     pgn_file.open(file_name);
 
     for (int round = 1;; round++) {
+        // int offset = round % number_of_starting_positions;
+        // std::string fen = std::string(starting_positions[offset]);
+        // Board b(fen);
         Board b;
 
         std::stringstream game_text;
@@ -134,6 +192,9 @@ void selfplay(std::string model_name, const int sims) {
         *pgn_short << std::fixed << std::setprecision(1);
 
         const bool is_full_playout = true; // fully_playout_game();
+        const int random_limit = 15;       // random_playout_limit();
+        std::cout << "Using random playout for first " << random_limit
+                  << " moves." << std::endl;
 
         while (!b.game_ended() && b.move_number() <= 512) {
 
@@ -155,7 +216,7 @@ void selfplay(std::string model_name, const int sims) {
             }
 
             const uint32_t move =
-                (is_move_fully_playedout && (b.move_number() <= 15))
+                (is_move_fully_playedout && (b.move_number() <= random_limit))
                     ? select_randomized_move(root)
                     : select_most_visited_move(root);
 
@@ -181,10 +242,13 @@ void selfplay(std::string model_name, const int sims) {
             b.do_move(move);
         }
 
+        monitoring::monitoring::instance()->observe_game_length(b.ply());
+
         const auto outcome = b.outcome();
         game_text << outcome;
 
         header(pgn_file, round, outcome, model_name);
+        header_if_setup(pgn_file, b);
         pgn_file << std::endl;
         pgn_file << game_text.str() << std::endl;
         pgn_file << std::endl;
