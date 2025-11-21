@@ -88,9 +88,9 @@ void monitoring::setup(void) {
     };
 
     std::vector<double> decision_buckets(
-        {10,   20,   40,   60,   80,   100,  140,   180,  220, 260,
-         300,  350,  400,  450,  500,  600,  700,   800,  900, 1000,
-         1500, 2000, 3000, 4000, 5000, 8000, 10000, 20000});
+        {10,   20,   40,   60,   80,   100,  140,  180,  220,   260,  300,
+         350,  400,  450,  500,  600,  700,  800,  900,  1000,  1100, 1200,
+         1400, 1600, 1800, 2000, 3000, 4000, 5000, 8000, 10000, 20000});
 
     auto &decision_histogram = prometheus::BuildHistogram()
                                    .Name("decision")
@@ -100,6 +100,21 @@ void monitoring::setup(void) {
 
     observe_decision = [&decision_histogram](int decision) {
         decision_histogram.Observe(decision);
+    };
+
+    std::vector<double> game_length_buckets(
+        {8,   16,  24,  32,  40,  48,  64,  72,  80,  88,  96,
+         104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184,
+         192, 200, 216, 232, 248, 264, 280, 312, 344, 408});
+
+    auto &game_length_histogram = prometheus::BuildHistogram()
+                                      .Name("game_length")
+                                      .Help("Plies per game")
+                                      .Register(*registry)
+                                      .Add({}, game_length_buckets);
+
+    observe_game_length = [&game_length_histogram](int game_length) {
+        game_length_histogram.Observe(game_length);
     };
 }
 } // namespace monitoring

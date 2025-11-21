@@ -18,6 +18,7 @@ class monitoring {
     std::function<void(double)> observe_evaluation;
     std::function<void(int)> observe_depth;
     std::function<void(int)> observe_decision;
+    std::function<void(int)> observe_game_length;
 
     static void initialize(std::string bind_address) {
         single_instance = new monitoring(bind_address);

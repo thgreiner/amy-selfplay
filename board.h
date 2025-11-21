@@ -24,11 +24,15 @@ class Board {
     position_t current_position() const;
     bool turn() const;
     int move_number() const;
+    int ply() const;
 
     bool is_in_check() const;
     bool is_repeated(int count) const;
     bool is_insufficient_material() const;
     bool is_fifty_move_rule() const;
+
+    bool is_setup() const;
+    std::string get_starting_fen() const;
 
     bool game_ended() const;
 
@@ -44,6 +48,8 @@ class Board {
   private:
     std::vector<std::shared_ptr<struct position>> positions;
     heap_t heap;
+    bool is_setup_flag = false;
+    std::string starting_fen;
 };
 
 #endif

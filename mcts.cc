@@ -107,7 +107,7 @@ std::shared_ptr<Node> MCTS::mcts(Board &board, const int n) {
 
         if (kldgain_stop > 0.0 && simulation > 0 && simulation % 100 == 0) {
             auto kldgain = update_kldgain(root, last_visit_count);
-            if (root->visit_count >= 400 && kldgain < kldgain_stop)
+            if (root->visit_count >= 200 && kldgain < kldgain_stop)
                 break;
         }
 
