@@ -159,8 +159,8 @@ void selfplay(std::string model_name, const int sims) {
     const int number_of_starting_positions =
         sizeof(starting_positions) / sizeof(char *);
 
-    std::cout << "Starting selfplay with model " << model_name << "and " << sims
-              << " sims." << std::endl;
+    std::cout << "Starting selfplay with model '" << model_name << "' and "
+              << sims << " sims." << std::endl;
 
     std::thread server_thread(setup_server);
     std::cout << "Started monitoring." << std::endl;
