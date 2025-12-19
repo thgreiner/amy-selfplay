@@ -4309,7 +4309,7 @@ int FCheckExistance(char *pszPath, int iTb, color side) {
     return false;
 }
 
-extern "C" int IInitializeTb(char *pszPath) {
+extern "C" int IInitializeTb(const char *pszPath) {
     char szTemp[1024];
     color sd;
     int iTb, iMaxTb, i;

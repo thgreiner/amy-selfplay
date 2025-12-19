@@ -243,8 +243,11 @@ bool is_enpassant_on(position_t p, int sq) {
 }
 
 void print_position(position_t p) {
+    printf("\n");
     for (int row = 7; row >= 0; row--) {
-        printf("+---+---+---+---+---+---+---+---+\n|");
+        printf("        +---+---+---+---+---+---+---+---+\n    %c %d |",
+               ((p->turn && row == 0) || (!p->turn && row == 7)) ? '*' : ' ',
+               row + 1);
         for (int col = 0; col < 8; col++) {
             int sq = col + row * 8;
             char piece = piece_on(p, sq);
@@ -268,7 +271,8 @@ void print_position(position_t p) {
         }
         printf("\n");
     }
-    printf("+---+---+---+---+---+---+---+---+\n");
+    printf("        +---+---+---+---+---+---+---+---+\n");
+    printf("          a   b   c   d   e   f   g   h\n\n");
 }
 
 void to_epd(position_t p, char *buffer) {

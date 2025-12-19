@@ -20,11 +20,6 @@ class Node {
         return (visit_count == 0) ? 0.0f : (value_sum / visit_count);
     }
 
-    float moves_left(float parent_moves_left = 0.0f) const {
-        return (visit_count == 0) ? parent_moves_left
-                                  : (moves_left_sum / visit_count);
-    }
-
     int visit_count = 0;
     bool turn;
     float prior;
@@ -33,7 +28,6 @@ class Node {
     bool is_expanded() const { return children.size() != 0; }
 
     float value_sum = 0.0;
-    float moves_left_sum = 0.0;
     bool is_root = false;
     int forced_playouts = 0;
 };

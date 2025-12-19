@@ -22,7 +22,7 @@ typedef unsigned int INDEX;
 
 static int EGTBMenCount;
 
-void initEGTB(char *tbpath) {
+void initEGTB(const char *tbpath) {
     TB_CRC_CHECK = 0;
     EGTBMenCount = IInitializeTb(tbpath);
     if (EGTBMenCount != 0) {
